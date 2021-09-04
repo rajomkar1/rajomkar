@@ -1,0 +1,25 @@
+package main 
+
+
+import "fmt"
+
+  
+func main() { 
+ 
+
+    var Pname = "Chandigarh" 
+
+    var Lname = "Omkar Raj" 
+
+    var Cname = "Computer"
+
+      
+
+    fmt.Printf("Portal name: %s", Pname) 
+
+    fmt.Printf("\nLanguage name: %s", Lname) 
+
+    fmt.Printf("\nChapter name: %s", Cname) 
+
+  
+}
