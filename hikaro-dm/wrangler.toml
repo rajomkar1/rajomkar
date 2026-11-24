@@ -2,5 +2,28 @@ name = "hikaro-dm"
 main = "src/index.ts"
 compatibility_date = "2024-11-01"
 
-# Secrets (set with `wrangler secret put`, never committed):
+# Secrets (set with `wrangler secret put --env <env>`, never committed):
 # META_APP_SECRET, META_WEBHOOK_VERIFY_TOKEN, TOKEN_ENCRYPTION_KEY
+
+# Replace database_id values after `wrangler d1 create <name>`.
+[[d1_databases]]
+binding = "DB"
+database_name = "hikaro-dm-dev"
+database_id = "REPLACE_DEV_ID"
+migrations_dir = "migrations"
+
+[env.staging]
+name = "hikaro-dm-staging"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "hikaro-dm-staging"
+database_id = "REPLACE_STAGING_ID"
+migrations_dir = "migrations"
+
+[env.production]
+name = "hikaro-dm"
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "hikaro-dm-prod"
+database_id = "REPLACE_PROD_ID"
+migrations_dir = "migrations"

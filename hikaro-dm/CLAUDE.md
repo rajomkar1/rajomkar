@@ -22,4 +22,5 @@ Product name: TBD, likely DMkoi, hosted at dmkoi.hikarohq.com (placeholder "Hika
 
 ## Progress
 - Week 0: project skeleton, health route, Meta webhook verification route, test setup.
-- Next (week 1): DB schema, environments, CI, policy pages.
+- Week 1: D1 schema (migrations/0001_init.sql), dev/staging/prod envs in wrangler.toml, GitHub Actions CI, company site with policy pages (site/). Placeholders [ADDRESS], [OWNER NAME], [UDYAM-NUMBER], [DATE], [DISTRICT, STATE] to fill.
+- Next (week 2): Instagram login (OAuth), encrypted token storage, webhook signature check.
