@@ -1,0 +1,6 @@
+name = "hikaro-dm"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# Secrets (set with `wrangler secret put`, never committed):
+# META_APP_SECRET, META_WEBHOOK_VERIFY_TOKEN, TOKEN_ENCRYPTION_KEY
