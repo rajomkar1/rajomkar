@@ -1,7 +1,8 @@
 # Hikaro DM — project context
 
 Instagram comment-to-DM automation SaaS by Hikaro (sole proprietorship, Udyam registered).
-Product name: TBD (placeholder "Hikaro DM").
+Parent domain: hikarohq.com (company site, policies, email hello@hikarohq.com).
+Product name: TBD, likely DMkoi, hosted at dmkoi.hikarohq.com (placeholder "Hikaro DM").
 
 ## Stack
 - TypeScript, Cloudflare Workers + Hono, D1 (Drizzle), KV, R2, Pages (React + Vite + Tailwind)
