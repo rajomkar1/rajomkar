@@ -1,116 +1,165 @@
-# AI Interview Simulator — Project Plan & Decisions
+# AI Interview Practice Assistant — Project Plan & Decisions
 
-Saved project memory for the training-center interview simulator. Read this first in every new session.
+Saved project memory. Read this first in every new session.
 
 ## 1. Goal
-A Windows desktop training tool that helps students practice real-company interviews
-(any job profile: backend developer, data analyst, etc.), gives live coaching, and records
-every session so trainers can measure improvement (target: 30–40% better performance).
+A Windows desktop practice assistant for a training center. During practice interviews
+(student and interviewer both know it is practice), it listens, reads the screens, and gives
+the candidate live, short, human-style answers and hints. Every session is saved as a raw
+chronological log for trainers to review manually.
 
-## 2. Agreed design boundaries
-- The student panel is **visible** (normal window, shows in screen-share).
-- **No** hidden / screen-share-invisible mode that feeds answers live.
-- **No** AI takeover of mouse/keyboard during a live interview. AI "demo mode"
-  (AI solves the same task) runs only after the session or in solo practice.
-- Live answer feed is for **practice sessions** (AI interviewer or a trainer who knows the tool is on).
-- Students consent to recording (line in the admission form).
+## 2. Agreed decisions
+- **Desktop app (.exe)** for the candidate's Windows PC (Python core + PyQt always-on-top panel,
+  signed installer). Trainer side (session codes, reading logs) can be a simple website later.
+- App runs **only on the candidate's computer**. Interviewer needs nothing.
+- **Practice only**: window always visible (no hidden / screen-share-excluded mode),
+  "PRACTICE SESSION" label on the panel, sessions start with a session code from the trainer.
+- **No** scores, skill maps, dashboards or webcam analysis — trainers analyse logs manually
+  (saves tokens and storage).
+- Student data (name, resume, GitHub, background) is treated as real data.
+- AI takeover of mouse/keyboard is not part of interviews (it was only a feasibility question).
 
-## 3. Features
-**Before session**
-- Job profile setup: JD text, skills, domain (e.g. hotel PMS: Python, Node.js, PostgreSQL,
-  REST API, GitHub, AWS CloudFormation).
-- Student profile: resume, background, degree, year (stored facts, inserted verbatim — never generated).
-- GitHub prep: read every repo → tech stack per project, approach, workflow, why choices
-  were made, major challenges, likely tricky questions + strong answers.
+## 3. Before the session
+- Inputs: role / JD, resume, background, GitHub repo links.
+- Read every repo: tech stack per project, approach, workflow, why choices were made, challenges.
+- Pre-generate ~100 likely questions with ready answers (instant display for common questions).
+- Build STT custom vocabulary from JD + project tech words.
 
-**During session**
-- Capture: system audio (interviewer, WASAPI loopback) + microphone (student), separate streams.
-- Live speaker-labeled transcript.
-- Question detection → instant first line (≤1–2 s) → full streamed answer.
-- Live check of student's answer: covered ✅ / missed ⚠️ / wrong ❌.
-- Coding round: read problem + code (UI Automation first, OCR fallback); hint after a 2–3 s stall.
-- Assistance levels: Full → Hints → Off.
-- AI interviewer (voice) for solo practice.
+## 4. The three agents
 
-**Recording (event logs, not video)**
-- Mouse position / clicks / scrolls, keystrokes & shortcuts, active window / Excel cell,
-  screen text snapshots, transcript, AI suggestions — all timestamped on one master clock.
-- Saved as chat-style sessions (one session = full raw chronological log, no extra summaries).
+### Agent 1 — Listener (background only, never shows anything)
+Keeps a live interview state, updated every second:
+- Speaker: interviewer / candidate / silence (separate audio streams)
+- Speech type: new question / sub-question / follow-up / instruction / small talk
+- Round type (auto): technical / HR / client / group discussion / system design / practical
+- Difficulty (for the AI only): easy / medium / hard / trap
+- Topic source: general concept / resume / project X / JD domain
+- Language: English / Hindi / Hinglish
+- What the candidate already said
+- Screen context: problem on screen, whiteboard, candidate editor, interviewer's shared screen
+- Writes everything to the session log
 
-**After session**
-- Trainer website / Android app: live view, session replay, per-student history.
-- "Watch AI do it" demo mode on the same task for side-by-side comparison.
+### Agent 2 — Answer (main answer for each new question)
+- Starts preparing from the partial question while interviewer is still speaking;
+  streams once ~700 ms silence; first line in ~1 s; discards draft if the question changes.
+- Style: 3–5 short lines, simple common words, natural Indian English,
+  spoken order "what it is → how we used it → why". No textbook definitions.
+- General concept → one-line idea + "in Python we do it like this…" (candidate's stack).
+- Project question → only from GitHub notes; else "⚠️ Not in your project data".
+- Resume facts → inserted verbatim.
+- Depth follows Listener difficulty; trap questions check the hidden catch first.
 
-## 4. Tech stack
+### Agent 3 — Coach (instant help in the middle of things)
+- A. Sub-question mid-answer → short answer in 2–5 s + one-line "come back" to main answer.
+- B. Candidate stuck (long pause, repeated fillers, trailing sentence) → only the next missed point.
+- C. Coding / practical round (any screen) → full answer first, background test, update if a fix
+  is found; typing hints after 2–3 s stall or mistake (next word, click Run, Ctrl+S); works for
+  code, Excel, SQL.
+- D. Hotkeys: **F8** stuck (force fresh answer), **F9** retry with stronger model,
+  **F10** make it shorter.
+
+## 5. Tech stack
 | Layer | Choice |
 |---|---|
-| Desktop app | Python (Windows), tray app + visible panel |
-| Audio | WASAPI loopback (system) + mic, two streams |
-| Speech-to-text | Deepgram or AssemblyAI streaming (custom vocabulary from JD + GitHub); faster-whisper as local option |
-| LLM — instant draft | Claude Haiku 5.5 (`claude-haiku-5-5`) |
-| LLM — full answer | Claude Opus 5.5 (`claude-opus-5-5`), fast mode; Sonnet 5.5 (`claude-sonnet-5-5`) as cheaper option |
-| LLM settings | Streaming, prompt caching (profile + GitHub notes + JD), server-side refusal fallbacks |
-| Text-to-speech (AI interviewer) | ElevenLabs or Azure Speech |
-| Backend | Own server holds API keys; app never stores keys |
-| Storage | Compressed JSON-lines event logs, encrypted |
+| Audio | WASAPI loopback (interviewer) + mic (candidate), two streams |
+| STT | Deepgram or AssemblyAI streaming + custom vocabulary; faster-whisper local option |
+| Fast draft | Claude Haiku 5.5 (`claude-haiku-5-5`) — Listener classification + first line |
+| Full answer / Coach | Claude Opus 5.5 (`claude-opus-5-5`), fast mode; Sonnet 5.5 (`claude-sonnet-5-5`) cheaper option |
+| LLM settings | Streaming, prompt caching (profile + GitHub notes + JD), refusal fallbacks |
+| Screen | Windows UI Automation first, OCR fallback |
+| Code test | Local sandbox run in background |
+| Keys | Held on own server, never inside the .exe |
+| Storage | Compressed JSON-lines session logs, encrypted |
 | Rough cost / 2-hr session | ~$1–4 LLM (Opus) + ~$0.5–1 STT |
 
-## 5. Build order
-1. Windows capture service (screen, system audio, mic, mouse/keyboard) + session storage
-2. Live transcription with speaker labels
-3. Interruption / cancellation logic + question detection
-4. Answer engine (Haiku draft + Opus full) + student panel
-5. GitHub & resume prep module
-6. Trainer website / Android app
-7. AI interviewer voice + AI demo mode
+## 6. Risks & fixes — mapped to the three agents
+Owner: **L** = Listener, **A** = Answer, **C** = Coach, **S** = System / app core.
 
-## 6. Known risks & fixes (checklist)
-**Interruptions / turn-taking**
-- Interviewer interrupts → cancel running answer, regenerate from newest question + context.
-- Pause inside question → wait 700–1000 ms silence; cancel & regenerate if speech resumes.
-- Non-questions ("okay", "good") → classify: question / follow-up / instruction / chit-chat.
-- Follow-ups ("why not the other one?") → always send recent history.
-- Multi-part questions → split and answer each part.
-- Student already answering well → show only missing points.
+### 6.1 Interruptions & turn-taking
+| Situation | Owner | Fix |
+|---|---|---|
+| Interviewer interrupts mid-question / changes question | L → A | L marks new question; A cancels running stream, regenerates from newest question + context |
+| Interviewer interrupts candidate's answer with sub-question | L → C | C answers sub-question in 2–5 s + "come back" line; A's main answer stays on panel |
+| Pause inside a question | L | Wait 700–1000 ms silence; if speech resumes, cancel and regenerate |
+| Non-question ("okay", "nice", "share your screen") | L | Classified as small talk / instruction; nothing shown, no tokens spent |
+| Follow-up ("why not the other one?") | L → A | L passes recent history so A resolves "the other one" |
+| Multi-part question | A | Split into ① ② and answer each |
+| Candidate already answering well | L → C | C shows only missing points, never repeats |
+| Candidate stuck mid-answer | L → C | Long pause / fillers detected; C shows the next point only |
+| Round changes (technical → HR) | L → A | Round type switches automatically; A changes style |
+| Group discussion | L → A | Track other speakers' points; suggest entry line + counter-point |
+| Answers arrive out of order | S | Every question has an ID; panel shows only answers for the latest ID |
 
-**API**
-- Cancelled stream: pay only for input + output generated so far; caching keeps retries cheap.
-- 429 / 5xx → retry-after + fallback model; never show a blank panel.
-- Budget runs out → pre-session balance check + spend alerts.
-- Network drop → local audio buffer, reconnect, resend; autosave logs locally.
-- Out-of-order answers → question IDs; display only answers for the latest question.
-- `stop_reason: refusal` → handle + fallbacks.
-- 2-hr context growth → recent turns in full, older summarized, fixed profile cached.
+### 6.2 API & tokens
+| Situation | Owner | Fix |
+|---|---|---|
+| Stream cancelled after interruption | S | Pay only input + output generated so far; cached profile keeps retries cheap |
+| Rate limit 429 / API 5xx / overloaded | S | Retry-after + fallback model; panel shows "retrying…", never blank |
+| Budget / credits run out | S | Balance check before session, spend alerts, low-budget warning |
+| Internet drops 5–10 s | S | Local audio buffer, reconnect, resend missed audio; log autosaved locally |
+| Answer too slow | A | Prepared answers, Haiku first line, Opus fast mode, streaming, small prompts |
+| Refusal (`stop_reason: refusal`) | S | Handle + server-side fallbacks |
+| Context grows over 2 hours | L | Recent turns in full, older turns summarized, fixed profile cached |
+| Tokens wasted on small talk | L | Classifier filters before calling A or C |
 
-**Audio / STT**
-- Tech words misheard → custom vocabulary.
-- Echo → headphones required, or echo cancellation.
-- Noise → suppression + voice-activity detection.
-- Wrong output device / Bluetooth headset mode → device picker, sound test, auto-reconnect.
+### 6.3 Audio & speech-to-text
+| Situation | Owner | Fix |
+|---|---|---|
+| Tech words misheard | S / L | Custom vocabulary from JD + GitHub; L corrects using context |
+| Accents, fast speech | S | Indian-English capable STT; tested on real recordings |
+| Hindi / Hinglish | L | Multilingual STT; L understands, A answers in simple English |
+| Echo (speakers → mic) | S | Headphones required, or echo cancellation |
+| Background noise / keyboard sound | S | Noise suppression + voice-activity detection |
+| Wrong output device / Bluetooth headset mode | S | Device picker + sound test at start; auto-reconnect on device change |
+| Low interviewer volume / laggy call | S / C | Volume normalize; F8 resends last 10 s |
 
-**Answer accuracy**
-- Project hallucination → answer only from GitHub notes; else "Not in your project data".
-- Resume facts → inserted verbatim.
-- Too long / textbook → 2–3 spoken lines first, first person, simple words.
-- Low confidence → mark ⚠️ and log for trainer review.
-- Hidden traps / edge cases → prompt to check assumptions first.
-- Stay consistent with student's earlier answers.
+### 6.4 Answer accuracy (most important)
+| Situation | Owner | Fix |
+|---|---|---|
+| Invents project details | A | Project answers only from GitHub notes; else "⚠️ Not in your project data" |
+| Wrong resume facts | A | Fixed facts inserted verbatim, never generated |
+| Too long / textbook | A | 3–5 short human lines, simple words |
+| Wrong on tricky question | A / C | Trap check first; F9 retry with stronger model + deeper thinking |
+| Generic answer, not candidate's stack | A | "In Python we do it like this…" rule; JD domain in cached context |
+| Contradicts candidate's earlier words | L → A | L passes what candidate already said |
+| Wrong coding solution | C | Answer shown first, tested in background, panel updated with the fix |
 
-**Screen / coding**
-- OCR misreads → UI Automation first; full-resolution capture; min font size.
-- Scrolled code / switched tabs → merge snapshots; save problem text on first sight.
-- False "stuck" hints → configurable stall time; verify snapshot is current.
+### 6.5 Screen reading (coding, practical, whiteboard)
+| Situation | Owner | Fix |
+|---|---|---|
+| OCR misreads code (l/1, O/0, indentation) | S | UI Automation first; full-resolution capture; OCR fallback |
+| Small font / dark theme | S | Full-resolution capture; recommend minimum font size |
+| Code scrolled out of view | L | Merge snapshots over time; note unseen parts |
+| Problem on interviewer's shared screen / whiteboard | L | Read shared screen in Zoom/Meet window automatically; save problem text on first sight |
+| Tab switched, problem disappears | L | Problem text already saved |
+| False "stuck" hint while candidate is thinking | C | Adjustable stall time; hint only on real stall or error |
+| Hint about code already fixed | C | Re-check latest snapshot before showing |
 
-**Windows / system**
-- Antivirus flags → code signing + whitelist guide.
-- Permissions → first-run wizard.
-- CPU load → 1 fps capture, OCR only on change, cloud STT.
-- Multi-monitor / DPI → record monitor + scale per event.
-- Crash / sleep → autosave every few seconds, resume.
+### 6.6 Windows & system
+| Situation | Owner | Fix |
+|---|---|---|
+| Antivirus flags keyboard/screen capture | S | Code-signed .exe + whitelist guide |
+| Mic / screen permissions | S | First-run setup wizard tests each one |
+| High CPU on weak laptops | S | 1 fps capture, OCR only on change, cloud STT |
+| Multi-monitor / DPI scaling | S | Store monitor + scale with every event |
+| Crash / sleep mid-session | S | Autosave every few seconds; resume on restart |
+| Clock mismatch audio / screen / keys | S | One master clock for all timestamps |
+| API keys stolen from .exe | S | Keys on own server only |
+| Passwords captured by key logging | S | Pause logging in password fields and login windows |
 
-**Privacy**
-- Keys on own server; pause key logging in password fields; encrypt sessions; retention policy.
+## 7. Build order
+1. Windows capture service (system audio, mic, screen, mouse/keyboard) + session log storage
+2. Live STT with speaker labels, Hinglish, custom vocabulary
+3. Listener agent (classification, round, difficulty, state) + interruption/cancel logic
+4. Answer agent + visible practice panel
+5. Coach agent + hotkeys F8/F9/F10 + background code testing
+6. Pre-session prep (GitHub/resume reading, prepared answers)
+7. Trainer website (session codes, log viewer)
 
-## 7. First tests
-1. Interruption test  2. Tech-word STT test (100 sentences)  3. Project-hallucination test (30 Qs)
-4. Latency test (target < 2 s to first word)  5. Network-drop test (10 s Wi-Fi off)
+## 8. First tests
+1. Interruption test (old answer cancelled, sub-question handled by Coach)
+2. Tech-word STT test (100 sentences)
+3. Project-hallucination test (30 questions, some about things not in the projects)
+4. Latency test (< 2 s to first word; prepared answers instant)
+5. Network-drop test (10 s Wi-Fi off)
+6. Round-switch test (technical → HR → system design without any selection)
