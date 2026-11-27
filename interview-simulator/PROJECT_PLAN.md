@@ -107,6 +107,49 @@ Keeps a live interview state, updated every second:
 5. **Logs as a question bank** — hard questions from every session are saved so the app gets
    stronger over time (and nobody can easily beat it with tricky questions).
 
+## 4c. Advanced in-session features (final, agreed)
+Rule: **the screen shows only what is happening right now.** Everything else runs in the background.
+Rule: **fully automatic** — candidate clicks Start once; everything runs until the interview ends.
+No buttons needed for features (F8/F9/F10 hotkeys stay only as emergency backup).
+
+1. **Background question prediction** — after each answer, predict 2–3 likely follow-ups and
+   pre-generate them silently. Never displayed; used only to make the next answer instant.
+2. **Project example only when relevant** — add a "in my project…" line only when the question
+   truly relates to a project in the prepared notes. No forced examples.
+3. **Honest line when the candidate hasn't used it** — only when the topic is genuinely not in
+   resume/projects (not for every topic). Shows: "I haven't used it in production, but it works
+   like…". Directly below: a **2–3 bullet short summary** of how that topic works, so the
+   candidate is ready if the interviewer asks deeper.
+4. **Clarify / repeat** —
+   - Question has two meanings → "Ask: Do you mean … or …?"
+   - STT confidence low / audio unclear → "Ask: Sorry, could you please repeat that?"
+5. **Line following** — lines the candidate already spoke fade; next line highlighted.
+6. **Layered coding help** — approach (1 line) → code → edge cases → time/space complexity.
+7. **Instant error explanation** — reads terminal/editor errors; cause + fix in one line.
+8. **Whiteboard as boxes** — component list in drawing order for system design.
+9. **Conversation memory** — remembers everything discussed; suggests linking lines like
+   "As I mentioned about indexing earlier…".
+10. **Automatic pace cue** — adjusts from interviewer's style and candidate's speed; no clicks.
+11. **Responsive panel** — adapts to any window size:
+    - Small: only the current card (2–3 key lines)
+    - Medium: current card + code view below
+    - Large: answer and code side by side
+12. **Synced code view (follows the editor)** —
+    - Listener reads the active editor (VS Code etc.) via UI Automation: current file, cursor line
+      (e.g. status bar "Ln 10"), visible lines; OCR fallback.
+    - Panel shows a window around the cursor (cursor −2 to +8, e.g. line 10 → lines 8–18),
+      updating automatically as the candidate moves.
+    - Works for any file size (20 or 200+ lines); only the nearby window is shown.
+13. **Interruption during coding** —
+    - Interviewer asks about a line ("why this loop?", "what does line 25 do?") → Listener maps it
+      to the line; code view jumps to and highlights it; Coach answer card appears on top.
+    - When the answer is done (candidate finished, interviewer moves on), the card collapses
+      automatically and the code view returns to the candidate's current cursor position so they
+      can continue writing. Previous Q&A stays only in the session log.
+
+Removed (not wanted): visible predictions, keyword-first lines, offline backup answers,
+panel-near-webcam placement.
+
 ## 5. Tech stack
 | Layer | Choice |
 |---|---|
