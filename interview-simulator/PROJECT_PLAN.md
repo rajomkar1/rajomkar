@@ -58,6 +58,55 @@ Keeps a live interview state, updated every second:
 - D. Hotkeys: **F8** stuck (force fresh answer), **F9** retry with stronger model,
   **F10** make it shorter.
 
+### Agent flow
+```
+            ┌────────────────────────────────────┐
+ Audio ───▶ │  AGENT 1: LISTENER (background)    │──▶ Session log
+ Screen ──▶ │  hears + sees everything           │
+            └──────────────┬─────────────────────┘
+                           │ "what is happening now"
+              ┌────────────┴────────────┐
+              ▼                         ▼
+   ┌─────────────────────┐   ┌─────────────────────┐
+   │ AGENT 2: ANSWER     │   │ AGENT 3: COACH      │
+   │ main answer for     │   │ mid-answer sub-Qs,  │
+   │ each new question   │   │ stuck moments,      │
+   └─────────┬───────────┘   │ coding hints        │
+             │               └─────────┬───────────┘
+             └────────── Panel ◀───────┘
+```
+
+### Answer style example
+- ❌ Textbook: "Indexing is a data structure technique used to efficiently retrieve records…"
+- ✅ Human: "Index is basically like a book index. Instead of checking every row, Postgres
+  directly jumps to the data. In my hotel booking project I added an index on booking date,
+  so search became much faster."
+
+## 4a. Situations the app must handle
+| Situation | What happens |
+|---|---|
+| Interviewer changes the question halfway | Old answer cancelled, new one starts |
+| Two questions in one sentence | Answer split into ① and ② |
+| "Why not the other one?" | Listener supplies what "the other one" means from history |
+| Interviewer uses a Hindi phrase ("ye wala kaise kaam karta hai?") | Understood; answered in simple English |
+| Interviewer says "Okay, nice" | Nothing shown, no tokens used |
+| Long silence after a question | Coach shows the first point to start with |
+| Round changes to HR mid-interview | Style changes automatically (STAR-style, short, personal) |
+| Group discussion | Tracks other speakers' points; suggests entry line + counter-point |
+| System design question on interviewer's whiteboard | Reads the board; answers with components, flow, trade-offs |
+| AI answer is wrong | F9 retries with stronger model; background code test catches coding mistakes |
+| Internet drops | Local audio buffer, reconnect, catch up |
+
+## 4b. Ways to improve accuracy
+1. **Prep before the interview** — from JD + resume + GitHub, prepare ~100 likely questions
+   with ready answers; common questions show in 0 s, AI only for new ones.
+2. **Two-model speed trick** — Haiku 5.5 writes the first line, Opus 5.5 completes and corrects it.
+3. **Custom vocabulary for STT** — tech words from JD + projects ("Postgres" never "post grass").
+4. **Answer cache per question type** — same question asked a different way reuses the matching
+   ready answer.
+5. **Logs as a question bank** — hard questions from every session are saved so the app gets
+   stronger over time (and nobody can easily beat it with tricky questions).
+
 ## 5. Tech stack
 | Layer | Choice |
 |---|---|
